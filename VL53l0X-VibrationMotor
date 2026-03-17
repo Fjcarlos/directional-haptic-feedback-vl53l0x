@@ -1,0 +1,190 @@
+#include <Wire.h>
+#include <VL53L0X.h>
+
+// Two ToF sensor instances
+VL53L0X sensor1;
+VL53L0X sensor2;
+VL53L0X sensor3;
+VL53L0X sensor4;
+VL53L0X sensor5;
+
+// XSHUT pins for controlling power
+#define XSHUT_1 7
+#define XSHUT_2 8
+#define XSHUT_3 9
+#define XSHUT_4 10
+#define XSHUT_5 11
+
+// LED output pins
+#define motor1 2
+#define motor2 3
+#define motor3 4
+#define motor4 5
+#define motor5 6
+
+bool sensor1_ok = false;
+bool sensor2_ok = false;
+bool sensor3_ok = false;
+bool sensor4_ok = false;
+bool sensor5_ok = false;
+
+void setup() {
+  pinMode(XSHUT_1, OUTPUT);
+  pinMode(XSHUT_2, OUTPUT);
+  pinMode(XSHUT_3, OUTPUT);
+  pinMode(XSHUT_4, OUTPUT);
+  pinMode(XSHUT_5, OUTPUT);
+  pinMode(motor1, OUTPUT);
+  pinMode(motor2, OUTPUT);
+  pinMode(motor3, OUTPUT);
+  pinMode(motor4, OUTPUT);
+  pinMode(motor5, OUTPUT);
+
+  Wire.begin();
+  Serial.begin(9600);
+
+  // Step 1: Shutdown all sensors
+  digitalWrite(XSHUT_1, LOW);
+  digitalWrite(XSHUT_2, LOW);
+  digitalWrite(XSHUT_3, LOW);
+  digitalWrite(XSHUT_4, LOW);
+  digitalWrite(XSHUT_5, LOW);
+  delay(10);
+
+  // Step 2: Initialize Sensor 1
+  digitalWrite(XSHUT_1, HIGH);
+  delay(10);
+  if (sensor1.init()) {
+    sensor1.setAddress(0x30); // Assign new I2C address
+    sensor1.startContinuous();
+    sensor1_ok = true;
+  } else {
+    Serial.println("Sensor 1 initialization failed!");
+  }
+
+  // Step 3: Initialize Sensor 2
+  digitalWrite(XSHUT_2, HIGH);
+  delay(10);
+  if (sensor2.init()) {
+    sensor2.setAddress(0x31); // Assign new I2C address
+    sensor2.startContinuous();
+    sensor2_ok = true;
+  } else {
+    Serial.println("Sensor 2 initialization failed!");
+  }
+
+  // Step 4: Initialize Sensor 3
+  digitalWrite(XSHUT_3, HIGH);
+  delay(10);
+  if (sensor3.init()) {
+    sensor3.setAddress(0x32); // Assign new I2C address
+    sensor3.startContinuous();
+    sensor3_ok = true;
+  } else {
+    Serial.println("Sensor 3 initialization failed!");
+  }
+
+  // Step 5: Initialize Sensor 4
+  digitalWrite(XSHUT_4, HIGH);
+  delay(10);
+  if (sensor4.init()) {
+    sensor4.setAddress(0x33); // Assign new I2C address
+    sensor4.startContinuous();
+    sensor4_ok = true;
+  } else {
+    Serial.println("Sensor 4 initialization failed!");
+  }
+
+  // Step 6: Initialize Sensor 5
+  digitalWrite(XSHUT_5, HIGH);
+  delay(10);
+  if (sensor5.init()) {
+    sensor5.setAddress(0x34); // Assign new I2C address
+    sensor5.startContinuous();
+    sensor5_ok = true;
+  } else {
+    Serial.println("Sensor 5 initialization failed!");
+  }
+
+  Serial.println("Sensors initialized.");
+}
+
+void loop() {
+  int dist1 = sensor1_ok ? sensor1.readRangeContinuousMillimeters() : -1;
+  int dist2 = sensor2_ok ? sensor2.readRangeContinuousMillimeters() : -1;
+  int dist3 = sensor3_ok ? sensor3.readRangeContinuousMillimeters() : -1;
+  int dist4 = sensor4_ok ? sensor4.readRangeContinuousMillimeters() : -1;
+  int dist5 = sensor5_ok ? sensor5.readRangeContinuousMillimeters() : -1;
+
+  if (sensor1_ok && sensor1.timeoutOccurred()) {
+    Serial.println("Sensor 1 timeout!");
+    dist1 = -1;  // Set invalid value
+  }
+  if (sensor2_ok && sensor2.timeoutOccurred()) {
+    Serial.println("Sensor 2 timeout!");
+    dist2 = -1;  // Set invalid value
+  }
+  if (sensor3_ok && sensor3.timeoutOccurred()) {
+    Serial.println("Sensor 3 timeout!");
+    dist3 = -1;  // Set invalid value
+  }
+  if (sensor4_ok && sensor4.timeoutOccurred()) {
+    Serial.println("Sensor 4 timeout!");
+    dist4 = -1;  // Set invalid value
+  }
+  if (sensor5_ok && sensor5.timeoutOccurred()) {
+    Serial.println("Sensor 5 timeout!");
+    dist5 = -1;  // Set invalid value
+  }
+
+  // Print distances (only print if sensor is working)
+  if (dist1 != -1) {
+    Serial.print("Sensor 1: ");
+    Serial.print(dist1 / 10.0);
+    Serial.print(" cm | ");
+  } else {
+    Serial.print("Sensor 1: ERROR | ");
+  }
+
+  if (dist2 != -1) {
+    Serial.print("Sensor 2: ");
+    Serial.print(dist2 / 10.0);
+    Serial.print(" cm | ");
+  } else {
+    Serial.print("Sensor 2: ERROR | ");
+  }
+
+  if (dist3 != -1) {
+    Serial.print("Sensor 3: ");
+    Serial.print(dist3 / 10.0);
+    Serial.print(" cm | ");
+  } else {
+    Serial.print("Sensor 3: ERROR | ");
+  }
+
+  if (dist4 != -1) {
+    Serial.print("Sensor 4: ");
+    Serial.print(dist4 / 10.0);
+    Serial.print(" cm | ");
+  } else {
+    Serial.print("Sensor 4: ERROR | ");
+  }
+
+  if (dist5 != -1) {
+    Serial.print("Sensor 5: ");
+    Serial.print(dist5 / 10.0);
+    Serial.print(" cm");
+  } else {
+    Serial.print("Sensor 5: ERROR");
+  }
+  Serial.println();
+
+  // Check distances and light up corresponding LEDs
+  digitalWrite(motor1, dist1 != -1 && dist1 < 2500 ? HIGH : LOW);
+  digitalWrite(motor2, dist2 != -1 && dist2 < 2500 ? HIGH : LOW);
+  digitalWrite(motor3, dist3 != -1 && dist3 < 2500 ? HIGH : LOW);
+  digitalWrite(motor4, dist4 != -1 && dist4 < 2500 ? HIGH : LOW);
+  digitalWrite(motor5, dist5 != -1 && dist5 < 2500 ? HIGH : LOW);
+
+  delay(200);
+}
